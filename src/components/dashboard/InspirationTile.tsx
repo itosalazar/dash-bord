@@ -28,6 +28,7 @@ export function InspirationTile({
 
   if (!board || !pin) {
     const pending = slot.error?.code === "not_connected" || slot.error?.code === "not_configured" || slot.error?.code === "unauthorized";
+    const badLink = slot.error?.code === "invalid";
     return (
       <section className={`${styles.tile} ${styles.dark}`} aria-labelledby="inspiration-label">
         <h2 id="inspiration-label" className="sr-only">
@@ -38,15 +39,17 @@ export function InspirationTile({
         ) : (
           <TileEmpty
             art={<DotText text="00" />}
-            title={pending ? "Pinterest connection pending" : board ? "This board has no images yet" : "Inspiration unavailable"}
+            title={
+              pending ? "Pinterest connection pending" : badLink ? "Check the board link" : board ? "This board has no images yet" : "Inspiration unavailable"
+            }
             body={
               pending
                 ? "Connect Pinterest and add a board URL in Settings. One Pin from that board will rest here, rotating on your schedule."
                 : (slot.error?.message ?? "Add a few image Pins to the board, then refresh.")
             }
             action={
-              <button type="button" className={styles.retry} onClick={pending ? onOpenSettings : onRetry}>
-                {pending ? "open settings" : "retry"}
+              <button type="button" className={styles.retry} onClick={pending || badLink ? onOpenSettings : onRetry}>
+                {pending || badLink ? "open settings" : "retry"}
               </button>
             }
           />
