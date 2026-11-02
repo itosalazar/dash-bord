@@ -105,7 +105,9 @@ export interface Cue {
 
 export type CalendarProviderId = "mock" | "google";
 export type WeatherProviderId = "mock" | "open-meteo" | "openweathermap";
-export type InspirationProviderId = "mock" | "pinterest";
+export type InspirationProviderId = "mock" | "rss" | "pinterest";
+/** "auto" = public board RSS feed when a board URL is set, demo images otherwise. */
+export type InspirationMode = "auto" | InspirationProviderId;
 
 export interface ConnectionStatus {
   configured: boolean; // client id/secret present
@@ -117,7 +119,7 @@ export interface AppStatus {
   calendarProvider: CalendarProviderId;
   weatherProviders: WeatherProviderId[];
   defaultWeatherProvider: WeatherProviderId;
-  inspirationProvider: InspirationProviderId;
+  inspirationProvider: InspirationMode;
   database: boolean;
   auth: { enabled: boolean };
   google: ConnectionStatus;
