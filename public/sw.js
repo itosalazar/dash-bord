@@ -2,7 +2,7 @@
  * API responses are never cached here: the app keeps its own last-good
  * snapshot in localStorage so stale data is always labelled as such. */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `dashbord-shell-${VERSION}`;
 const STATIC = `dashbord-static-${VERSION}`;
 const IMAGES = `dashbord-images-${VERSION}`;
@@ -12,6 +12,8 @@ const PRECACHE = [
   "/offline",
   "/setup",
   "/manifest.webmanifest",
+  "/favicon.ico",
+  "/icons/favicon.svg",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
