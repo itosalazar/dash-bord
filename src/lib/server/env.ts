@@ -1,7 +1,7 @@
 import "server-only";
 import type {
   CalendarProviderId,
-  InspirationProviderId,
+  InspirationMode,
   WeatherProviderId,
 } from "@/lib/types";
 
@@ -53,8 +53,8 @@ export const env = {
   get weatherProvider(): WeatherProviderId {
     return oneOf("WEATHER_PROVIDER", ["mock", "open-meteo", "openweathermap"] as const, "mock");
   },
-  get inspirationProvider(): InspirationProviderId {
-    return oneOf("INSPIRATION_PROVIDER", ["mock", "pinterest"] as const, "mock");
+  get inspirationProvider(): InspirationMode {
+    return oneOf("INSPIRATION_PROVIDER", ["auto", "mock", "rss", "pinterest"] as const, "auto");
   },
 
   get googleClientId() {
