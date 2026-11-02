@@ -5,6 +5,7 @@ import { googleCalendarProvider } from "./calendar/google";
 import { mockCalendarProvider } from "./calendar/mock";
 import { mockInspirationProvider } from "./inspiration/mock";
 import { pinterestProvider } from "./inspiration/pinterest";
+import { pinterestRssProvider } from "./inspiration/rss";
 import type { CalendarProvider, InspirationProvider, WeatherProvider } from "./types";
 import { mockWeatherProvider, openMeteoProvider, openWeatherMapProvider } from "./weather";
 
@@ -27,6 +28,16 @@ export function weatherProvider(requested?: string): WeatherProvider {
   return WEATHER[id];
 }
 
-export function inspirationProvider(): InspirationProvider {
-  return env.inspirationProvider === "pinterest" ? pinterestProvider : mockInspirationProvider;
+/** auto (default): the board's public RSS feed once a board URL is set, demo art before that. */
+export function inspirationProvider(boardUrl: string): InspirationProvider {
+  switch (env.inspirationProvider) {
+    case "pinterest":
+      return pinterestProvider;
+    case "rss":
+      return pinterestRssProvider;
+    case "mock":
+      return mockInspirationProvider;
+    default:
+      return boardUrl ? pinterestRssProvider : mockInspirationProvider;
+  }
 }
