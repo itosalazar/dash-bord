@@ -233,7 +233,8 @@ DATABASE_URL="postgres://…" npm run db:migrate
 
 **5. Connect services** — follow [Google Calendar setup](#google-calendar-setup) and
 [Pinterest setup](#pinterest-setup), add their env vars in Vercel, switch `CALENDAR_PROVIDER=google` /
-`INSPIRATION_PROVIDER=pinterest`, redeploy, then use **Settings → Calendar / Inspiration → connect**.
+`INSPIRATION_PROVIDER=pinterest` (only if you want the API instead of the public board feed), redeploy, then use
+**Settings → Calendar / Inspiration → connect**.
 
 **6. Install on the devices** — see [Install on the iPhone](#install-on-the-iphone); the same steps work on iPad
 (the Share button is at the top right).
@@ -307,9 +308,21 @@ deletes the stored tokens.
 
 ## Pinterest setup
 
-dash-bord uses only the **official Pinterest API v5 with OAuth** — it never scrapes Pinterest pages and never embeds a
-multi-Pin board widget. It reads Pin metadata and image URLs, caches them server-side for 6 h, and the device shows
-one Pin at a time.
+dash-bord never scrapes Pinterest pages and never embeds a multi-Pin board widget; the device shows one Pin at a time.
+There are two ways to get the images:
+
+### Option A — public board feed (default, no setup)
+
+Paste a board link (`https://www.pinterest.com/<username>/<board-name>/`) in **Settings → Inspiration** and save.
+With `INSPIRATION_PROVIDER` unset or `auto`, dash-bord reads the board's public RSS feed
+(`…/<board-name>.rss`, published by Pinterest), takes the image Pins and their links, and caches them (30 min on the
+server, 6 h on the device).
+
+- The board must be **public** — secret boards have no feed.
+- The feed holds the board's ~25 most recent Pins.
+- If Pinterest stops answering, the last images stay on screen.
+
+### Option B — official API with OAuth (secret boards, larger boards)
 
 1. [developers.pinterest.com](https://developers.pinterest.com/) → connect a Pinterest **business** account (free
    conversion) → **My apps → Connect app**.
@@ -377,7 +390,7 @@ All variables are server-only. See `.env.example` for comments.
 | `GOOGLE_CLIENT_ID` / `_SECRET`    | for Google                | OAuth web client                                 |
 | `WEATHER_PROVIDER`                | –                         | `mock` \| `open-meteo` \| `openweathermap`       |
 | `OPENWEATHERMAP_API_KEY`          | for OpenWeatherMap        |                                                  |
-| `INSPIRATION_PROVIDER`            | –                         | `mock` \| `pinterest`                            |
+| `INSPIRATION_PROVIDER`            | –                         | `auto` (RSS when a board is set) \| `rss` \| `mock` \| `pinterest` |
 | `PINTEREST_APP_ID` / `_SECRET`    | for Pinterest             |                                                  |
 | `PINTEREST_INCLUDE_SECRET_BOARDS` | –                         | `true` to request secret-board scopes            |
 
