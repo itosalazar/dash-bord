@@ -5,7 +5,7 @@ for an **iPad** in either orientation. It is a
 foreground "Desk Mode" web app, not a StandBy replacement: big live clock, weather, the next calendar events, one
 featured Pinterest image and one gentle habit cue, laid out as a landscape bento grid.
 
-Visual language follows the references in `../ref`: matte squircle tiles in black, bone and signal vermilion on a slate
+Visual language follows the project's visual references: matte squircle tiles in black, bone and signal vermilion on a slate
 desk; neo-grotesk numerals (Geist), monospace micro-labels (Geist Mono), dot-matrix accents, and a serif (Instrument
 Serif) for the cue. Three themes: `graphite` (default), `noir`, `paper`.
 
@@ -148,12 +148,6 @@ npm run build
 npm start                       # http://localhost:3000
 ```
 
-> **External drive note (FAT32 / exFAT).** These filesystems have no symlinks, so a plain `npm install` fails to
-> create `node_modules/.bin`. Use `npm install --no-bin-links` — every npm script calls tools via
-> `node ./node_modules/...` and works without `.bin`. macOS also writes `._*` AppleDouble files on these drives; they
-> are git-ignored and excluded from TypeScript/ESLint, and Turbopack's disk cache is disabled in `next.config.ts` for
-> the same reason. `dot_clean -m .` removes them if you want a tidy folder.
-
 To test on the phone over Wi-Fi before deploying, run `npm run dev -- -H 0.0.0.0` and open
 `http://<your-mac-ip>:3000` in Safari. (Wake Lock and service workers need HTTPS on real devices, so the full PWA
 experience needs the deployed URL.)
@@ -186,8 +180,8 @@ npm run check       # all three
 
 ## Next steps: GitHub → Vercel
 
-The repository should be **this folder** (`dash-bord-app/`), not the parent (which holds the reference images).
-`.gitignore` already keeps `node_modules`, `.next`, `.env.local` and macOS `._*` files out.
+The repository root should be this project folder (the one containing `package.json`).
+`.gitignore` already keeps `node_modules`, `.next` and `.env.local` out.
 
 **1. Create the GitHub repository** — github.com → **New repository** → name `dash-bord`, **Private**, *no* README /
 .gitignore / license (the project has its own). Copy the HTTPS URL.
@@ -195,12 +189,11 @@ The repository should be **this folder** (`dash-bord-app/`), not the parent (whi
 **2. Commit and push** from Terminal:
 
 ```bash
-cd /Volumes/MEDIA/CLAUDE_stuff/dash-bord/dash-bord-app
+cd path/to/dash-bord
 git init
 git symbolic-ref HEAD refs/heads/main   # name the branch "main" (works on older git too)
-git config core.fileMode false        # FAT32 drives don't store file permissions
 git add .
-git status                            # check: no .env.local, node_modules or ._* files listed
+git status                              # check: no .env.local or node_modules listed
 git commit -m "Initial commit: dash-bord desk dashboard"
 git remote add origin https://github.com/<your-username>/dash-bord.git
 git push -u origin main
@@ -282,6 +275,21 @@ Google and Pinterest.
 ---
 
 ## Google Calendar setup
+
+### Option A — private iCal link (default, no setup)
+
+1. Google Calendar on a computer → **⚙ Settings** → under *Settings for my calendars* click your calendar →
+   **Integrate calendar** → copy **Secret address in iCal format** (ends in `basic.ics`).
+2. dash-bord → **Settings → Calendar → calendar link** → paste → **save**.
+
+The link is stored on the device (and in your database if one is configured), shown masked, and sent to the server
+only inside POST request bodies — never in a URL, so it doesn't appear in request logs. The server reads the feed
+every ~5 minutes and expands repeating events, moved/cancelled occurrences, all-day events and time zones. Declined
+events are detected when the calendar is named after your email address (Google's default for your main calendar).
+Anyone with the link can read the calendar; if it leaks, use **Reset** on the same Google page and paste the new one.
+iCloud and Outlook published-calendar links (`webcal://` or `https://`) work too. One link = one calendar.
+
+### Option B — Google OAuth (read-only API)
 
 1. [Google Cloud Console](https://console.cloud.google.com/) → create a project → **APIs & Services → Library** →
    enable **Google Calendar API**.
@@ -375,18 +383,40 @@ from a city search (Open-Meteo geocoding, server-side) or the device's location.
 
 ---
 
+## Open mode (no password)
+
+Set `DASHBORD_OPEN=true` in Vercel and redeploy to remove the sign-in. `DASHBORD_PASSPHRASE` and `AUTH_SECRET` are then
+not needed. Because anyone with the URL can use the desk:
+
+- **Nothing personal is stored on the server.** Calendar link, Pinterest board and settings stay on each device.
+  Database sync and the Google / Pinterest OAuth sign-ins are switched off even if their variables are set.
+- **The server only fetches from known hosts:** calendars from Google Calendar, iCloud and Outlook; Pinterest board
+  feeds; cue feeds from GitHub (`raw.githubusercontent.com`, `gist.githubusercontent.com`). Add more with
+  `DASHBORD_ALLOWED_FEED_HOSTS`. Private-network addresses are always refused.
+- **Rate limiting** (all modes): 60 API requests per minute per visitor — a desk uses about two.
+- **Shared caches** keep upstream calls low: weather 10 min per ~1 km area, calendar feeds 2 min, Pinterest feeds
+  30 min.
+- **Not indexed:** `X-Robots-Tag: noindex` on every response and a `robots.txt` that disallows everything.
+
+For stronger protection, add a rate-limit rule in Vercel → Project → **Firewall**. Switch back to private by removing
+`DASHBORD_OPEN` and setting the passphrase variables.
+
+---
+
 ## Environment variables
 
 All variables are server-only. See `.env.example` for comments.
 
 | name                              | required                  | purpose                                          |
 | --------------------------------- | ------------------------- | ------------------------------------------------ |
-| `DASHBORD_PASSPHRASE`             | production                | the sign-in passphrase                           |
-| `AUTH_SECRET`                     | production                | session signing key, ≥ 32 chars                  |
+| `DASHBORD_OPEN`                   | –                         | `true` = no sign-in (see Open mode)              |
+| `DASHBORD_ALLOWED_FEED_HOSTS`     | –                         | extra feed hosts allowed in open mode            |
+| `DASHBORD_PASSPHRASE`             | production (private mode) | the sign-in passphrase                           |
+| `AUTH_SECRET`                     | production (private mode) | session signing key, ≥ 32 chars                  |
 | `DATABASE_URL` / `POSTGRES_URL`   | for OAuth + settings sync | Postgres connection string                       |
 | `TOKEN_ENCRYPTION_KEY`            | for OAuth                 | 32 bytes base64, encrypts tokens at rest         |
 | `APP_URL`                         | recommended               | public origin for OAuth redirect URIs            |
-| `CALENDAR_PROVIDER`               | –                         | `mock` \| `google`                               |
+| `CALENDAR_PROVIDER`               | –                         | unset = iCal link from Settings (demo until set) \| `google` |
 | `GOOGLE_CLIENT_ID` / `_SECRET`    | for Google                | OAuth web client                                 |
 | `WEATHER_PROVIDER`                | –                         | `mock` \| `open-meteo` \| `openweathermap`       |
 | `OPENWEATHERMAP_API_KEY`          | for OpenWeatherMap        |                                                  |
