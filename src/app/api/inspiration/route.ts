@@ -8,5 +8,5 @@ export async function GET(request: Request) {
   if (denied) return denied;
 
   const boardUrl = (new URL(request.url).searchParams.get("board") ?? "").slice(0, 300);
-  return providerJson(await inspirationProvider().getBoard({ boardUrl }));
+  return providerJson(await inspirationProvider(boardUrl).getBoard({ boardUrl }));
 }
