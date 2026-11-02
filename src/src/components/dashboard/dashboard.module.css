@@ -1,0 +1,977 @@
+/* ------------------------------------------------------------------ desk */
+
+.desk {
+  /* Tile height available inside the safe areas. The right column's width is
+     derived from it so the inspiration tile under the cue comes out square. */
+  --desk-h: calc(100vh - max(env(safe-area-inset-top), var(--gap)) - max(env(safe-area-inset-bottom), var(--gap)));
+  --cue-share: 0.31;
+  --side-w: min(48vw, calc(var(--desk-h) * (1 - var(--cue-share)) - var(--gap) * 0.7));
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side-w);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--gap);
+  padding: max(env(safe-area-inset-top), var(--gap)) max(env(safe-area-inset-right), var(--gap))
+    max(env(safe-area-inset-bottom), var(--gap)) max(env(safe-area-inset-left), var(--gap));
+  transition: filter 1.2s var(--ease-out);
+}
+
+.desk[data-dim="true"] {
+  filter: brightness(0.6) saturate(0.85);
+}
+
+@supports (height: 100dvh) {
+  .desk {
+    --desk-h: calc(100dvh - max(env(safe-area-inset-top), var(--gap)) - max(env(safe-area-inset-bottom), var(--gap)));
+  }
+}
+
+.main,
+.info,
+.side {
+  display: grid;
+  gap: var(--gap);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Left: clock on top, weather + calendar side by side below. */
+.main {
+  grid-template-rows: minmax(0, 52fr) minmax(0, 48fr);
+}
+
+.info {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+}
+
+/* Right: a compact cue above a square image. */
+.side {
+  grid-template-rows: minmax(0, 31fr) minmax(0, 69fr);
+}
+
+/* ----------------------------------------------------------------- tiles */
+
+.tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-tile);
+  container-type: size;
+}
+
+.dark {
+  background: var(--tile-dark);
+  color: var(--tile-dark-text);
+  --muted: var(--tile-dark-muted);
+  --line: var(--tile-dark-line);
+}
+
+.light {
+  background: var(--tile-light);
+  color: var(--tile-light-text);
+  --muted: var(--tile-light-muted);
+  --line: var(--tile-light-line);
+}
+
+.accent {
+  background: var(--accent);
+  color: var(--accent-text);
+  --muted: var(--accent-muted);
+  --line: rgba(12, 12, 12, 0.18);
+}
+
+.padded {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--pad);
+}
+
+.label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 13px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  color: var(--muted);
+}
+
+.labelRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.counter {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 13px);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ clock */
+
+.clockZone {
+  container: clockzone / size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding-left: calc(var(--pad) * 0.35);
+}
+
+/* Time on the left, focus timer on the right. */
+.clockRow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap);
+  container-type: size;
+}
+
+.clockFace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  align-items: flex-end;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  cursor: default;
+}
+
+.time {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.06em;
+  font-size: min(29cqw, 112cqh);
+  line-height: 0.74;
+  font-weight: 450;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--bg-text);
+  white-space: nowrap;
+}
+
+.digits {
+  display: inline-block;
+  padding-bottom: 0.02em;
+}
+
+.colon {
+  display: inline-block;
+  transform: translateY(-0.06em);
+  margin: 0 -0.01em;
+  color: var(--accent);
+}
+
+.timeSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.07em;
+  margin-left: 0.1em;
+  padding-bottom: 0.02em;
+  letter-spacing: 0;
+}
+
+/* Same face as the clock, small and in the accent colour. */
+.seconds {
+  font-size: 0.24em;
+  line-height: 0.8;
+  font-weight: 450;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.period {
+  font-family: var(--font-mono);
+  font-size: 0.13em;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--bg-muted);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: clamp(4px, 2vh, 10px);
+}
+
+.dateLine {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 3.5vh, 15px);
+  line-height: 1.3;
+  color: var(--bg-text);
+}
+
+.dateLine > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context {
+  color: var(--bg-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--bg-line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--bg-text);
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 12px);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pill:hover {
+  border-color: var(--bg-muted);
+}
+
+.pill[aria-pressed="true"] {
+  background: var(--bg-text);
+  color: var(--bg);
+  border-color: var(--bg-text);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+
+.statusDot[data-state="on"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.statusDot[data-state="warn"] {
+  border-color: var(--accent);
+  animation: blink 1.6s steps(2, jump-none) infinite;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid var(--bg-line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bg-text);
+  transition: border-color 0.2s;
+}
+
+.iconButton:hover {
+  border-color: var(--bg-muted);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Tall clock zones (iPad landscape): dial above, time across the full width. */
+@container clockzone (aspect-ratio < 1.6) {
+  .clockRow {
+    flex-direction: column;
+  }
+  .timer {
+    order: -1;
+    width: min(48cqh, 200px);
+    height: min(48cqh, 200px);
+  }
+}
+
+/* ------------------------------------------------------------ focus timer */
+
+/* The focus timer is its own black tile: a ring of ticks inside a squircle. */
+.timer {
+  position: relative;
+  flex: none;
+  align-self: flex-end;
+  width: min(100cqh, 42cqw, 200px);
+  height: min(100cqh, 42cqw, 200px);
+  border-radius: var(--radius-tile);
+  background: var(--tile-dark);
+  color: var(--tile-dark-text);
+  container-type: size;
+}
+
+.timerButton {
+  all: unset;
+  position: absolute;
+  inset: 7%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.timerButton:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.timerRing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.timerRing line {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  transition: stroke 0.4s;
+}
+
+.tickOn {
+  stroke: var(--tile-dark-text);
+}
+
+.tickOff {
+  stroke: var(--tile-dark-line);
+}
+
+.tickHead {
+  stroke: var(--accent);
+}
+
+.timer[data-status="idle"] .tickOn {
+  stroke: var(--tile-dark-muted);
+}
+
+.timer[data-phase="short"] .tickOn,
+.timer[data-phase="long"] .tickOn {
+  stroke: var(--accent);
+}
+
+.timerCenter {
+  display: grid;
+  justify-items: center;
+  gap: 2cqh;
+  text-align: center;
+}
+
+.timerPhase,
+.timerSub {
+  font-family: var(--font-mono);
+  font-size: max(9px, 6.5cqw);
+  line-height: 1;
+  color: var(--tile-dark-muted);
+  white-space: nowrap;
+}
+
+.timerTime {
+  font-size: 18cqw;
+  line-height: 0.95;
+  font-weight: 450;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--tile-dark-text);
+}
+
+.timerColon {
+  color: var(--accent);
+}
+
+.timer[data-status="paused"] .timerTime {
+  animation: blink 1.6s steps(2, jump-none) infinite;
+}
+
+.timer[data-status="running"] .timerPhase,
+.timer[data-phase="short"] .timerPhase,
+.timer[data-phase="long"] .timerPhase {
+  color: var(--accent);
+}
+
+.timerReset {
+  position: absolute;
+  right: 6%;
+  bottom: 6%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--tile-dark-line);
+  border-radius: 50%;
+  background: var(--tile-dark);
+  color: var(--tile-dark-text);
+}
+
+/* 44px hit area without a bigger visual. */
+.timerReset::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+/* ---------------------------------------------------------------- weather */
+
+.weatherTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.weatherIcon {
+  width: min(30cqw, 26cqh);
+  height: min(30cqw, 26cqh);
+  flex-shrink: 0;
+}
+
+.temp {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: min(40cqw, 34cqh);
+  line-height: 1;
+  font-weight: 450;
+  letter-spacing: -0.05em;
+}
+
+.tempValue {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.deg {
+  margin-top: 0.12em;
+  font-size: 0.5em;
+  letter-spacing: 0;
+}
+
+.weatherFoot {
+  display: grid;
+  gap: 6px;
+}
+
+.summary {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 13px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.range {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 2.7vh, 12px);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rangeBar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--tile-light-text), rgba(12, 12, 12, 0.18));
+}
+
+.rangeMark {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--tile-light);
+  transform: translateY(-50%);
+}
+
+/* --------------------------------------------------------------- calendar */
+
+.events {
+  display: grid;
+  align-content: start;
+  gap: clamp(6px, 3cqh, 12px);
+  margin: clamp(6px, 4cqh, 14px) 0 0;
+  padding: 0;
+  list-style: none;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: 3px 1fr;
+  gap: 10px;
+  min-width: 0;
+}
+
+.event + .event {
+  padding-top: clamp(6px, 3cqh, 12px);
+  border-top: 1px solid var(--line);
+}
+
+.eventBar {
+  border-radius: 2px;
+  background: var(--muted);
+  opacity: 0.6;
+}
+
+.event[data-next="true"] .eventBar {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.eventTitle {
+  margin: 0;
+  font-size: clamp(13px, min(11cqh, 9cqw), 19px);
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventTime {
+  margin: 2px 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 12px);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nowTag {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------ inspiration */
+
+.inspiration {
+  background: #2a2723;
+}
+
+.pinLink,
+.pinImage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pinImage {
+  object-fit: cover;
+  animation: fadeIn 0.6s var(--ease-out);
+}
+
+.refreshButton {
+  position: absolute;
+  top: calc(var(--pad) * 0.7);
+  right: calc(var(--pad) * 0.7);
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(12, 12, 12, 0.84);
+  color: #f4f3ef;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.refreshButton svg {
+  transition: transform 0.5s var(--ease-out);
+}
+
+.refreshButton:active svg {
+  transform: rotate(120deg);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: var(--pad);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: clamp(16px, min(12cqh, 6cqw), 26px);
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+}
+
+.emptyBody {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 12px);
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 44ch;
+}
+
+.emptyArt {
+  font-size: min(26cqh, 18cqw);
+  color: var(--accent);
+}
+
+/* -------------------------------------------------------------------- cue */
+
+.cueButton {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: calc(var(--pad) * 0.85) var(--pad);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cueButton:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: -6px;
+  border-radius: var(--radius-tile);
+}
+
+.cueText {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  animation: rise 0.7s var(--ease-out);
+}
+
+/* Sized for the compact cue tile above the image (short and wide). */
+.cueText[data-length="short"] {
+  font-size: min(30cqh, 10.5cqw);
+}
+
+.cueText[data-length="medium"] {
+  font-size: min(23cqh, 8.2cqw);
+}
+
+.cueText[data-length="long"] {
+  font-size: min(16.5cqh, 6.2cqw);
+}
+
+.attribution {
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 12px);
+  color: var(--muted);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------- tile states */
+
+.notice {
+  position: absolute;
+  left: calc(var(--pad) * 0.6);
+  right: calc(var(--pad) * 0.6);
+  bottom: calc(var(--pad) * 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 4px 4px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(12, 12, 12, 0.88);
+  color: #f4f3ef;
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 2.8vh, 11px);
+  z-index: 2;
+}
+
+.noticeText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retry {
+  flex-shrink: 0;
+  min-height: 32px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-size: inherit;
+}
+
+/* Expand the retry hit area to 44px without growing the pill visually. */
+.retry {
+  position: relative;
+}
+
+.retry::after {
+  content: "";
+  position: absolute;
+  inset: -6px -2px;
+}
+
+.skeleton {
+  animation: breathe 1.4s ease-in-out infinite;
+  color: var(--muted);
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---------------------------------------------------------- small phones */
+
+/* Calendar rows follow the tile's own height: 2 on phones, up to 4 on iPad. */
+.event:nth-child(n + 3) {
+  display: none;
+}
+
+@container (min-height: 290px) {
+  .event:nth-child(3) {
+    display: grid;
+  }
+}
+
+@container (min-height: 390px) {
+  .event:nth-child(4) {
+    display: grid;
+  }
+}
+
+@container (max-height: 150px) {
+  .event:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  .deskLabel {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------- portrait */
+
+.rotate {
+  display: none;
+}
+
+/* Tablets: larger micro-type for reading across a desk. */
+@media (min-width: 900px) and (min-height: 640px), (orientation: portrait) and (min-width: 600px) {
+  .label,
+  .counter,
+  .summary,
+  .eventTime,
+  .attribution,
+  .emptyBody,
+  .pill,
+  .notice {
+    font-size: var(--fs-label);
+  }
+  .range {
+    font-size: calc(var(--fs-label) * 0.9);
+  }
+  .dateLine {
+    font-size: clamp(15px, 1.8vmax, 22px);
+  }
+  .eventTitle {
+    font-size: clamp(16px, min(9cqh, 8cqw), 26px);
+  }
+  .emptyTitle {
+    font-size: clamp(20px, min(10cqh, 6cqw), 32px);
+  }
+  .rangeBar {
+    height: 8px;
+  }
+}
+
+/* Tablet landscape: a little more clock. */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 640px) {
+  .time {
+    font-size: min(30cqw, 112cqh);
+  }
+}
+
+/* Tablet portrait (iPad upright): clock + weather/calendar on top; cue beside a square image below. */
+@media (orientation: portrait) and (min-width: 600px) {
+  .desk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 55fr) minmax(0, 45fr);
+  }
+  .side {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) min(62vw, calc(var(--desk-h) * 0.45 - var(--gap) * 0.5));
+  }
+  /* The cue tile is tall and narrow here, so size by width instead. */
+  .cueText[data-length="short"] {
+    font-size: min(16cqh, 17cqw);
+  }
+  .cueText[data-length="medium"] {
+    font-size: min(12cqh, 13cqw);
+  }
+  .cueText[data-length="long"] {
+    font-size: min(9cqh, 10cqw);
+  }
+  .time {
+    font-size: min(30cqw, 100cqh);
+  }
+}
+
+/* Phones held upright: ask for landscape instead of cramming the grid. */
+@media (orientation: portrait) and (max-width: 599px) {
+  .rotate {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 18px;
+    padding: 32px;
+    background: var(--bg);
+    color: var(--bg-text);
+    text-align: center;
+  }
+  .desk {
+    visibility: hidden;
+  }
+}
+
+.rotateIcon {
+  width: 64px;
+  height: 64px;
+  animation: turn 2.4s var(--ease-out) infinite;
+}
+
+.rotateTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.rotateBody {
+  margin: 0;
+  max-width: 28ch;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--bg-muted);
+}
+
+@keyframes turn {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* ---------------------------------------------------------- toast */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(env(safe-area-inset-bottom), 14px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 10px 10px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--tile-dark);
+  color: var(--tile-dark-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transform: translateX(-50%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: rise 0.4s var(--ease-out);
+}
+
+.toast button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--tile-dark-line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 12px;
+}
