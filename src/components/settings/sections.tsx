@@ -322,10 +322,14 @@ export function InspirationSection({ settings, update, status, reloadStatus, dat
             data.refresh.inspiration();
           }}
         />
+      ) : status?.inspirationProvider === "mock" ? (
+        <p className={styles.hint}>
+          Demo mode (INSPIRATION_PROVIDER=mock): local illustrations stand in for your board.
+        </p>
       ) : (
         <p className={styles.hint}>
-          Demo mode: local illustrations stand in for your board. Set INSPIRATION_PROVIDER=pinterest and the Pinterest app variables
-          on the server to use a real board.
+          Images come from the board&apos;s public RSS feed — no Pinterest login needed. The board must be public; the feed holds
+          its ~25 most recent Pins. Leave the link empty to see the demo illustrations.
         </p>
       )}
       <Group label="pinterest board url">
