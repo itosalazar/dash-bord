@@ -12,6 +12,8 @@ import type { Settings } from "@/lib/settings";
  */
 
 export type TimerPhase = "focus" | "short" | "long";
+/** Swipe order on the dial. */
+export const TIMER_PHASES: readonly TimerPhase[] = ["focus", "short", "long"];
 export type TimerStatus = "idle" | "running" | "paused";
 
 interface TimerState {
@@ -100,6 +102,14 @@ export function usePomodoro(config: TimerConfig, onComplete: (finished: TimerPha
     commit((current) => ({ ...current, status: "idle", endsAt: null, remainingMs: null }));
   }, [commit]);
 
+  /** Switch to another phase while stopped (swipe on the dial). */
+  const selectPhase = useCallback(
+    (phase: TimerPhase) => {
+      commit((current) => (current.status === "idle" ? { ...current, phase, endsAt: null, remainingMs: null } : current));
+    },
+    [commit],
+  );
+
   /** Fresh cycle: focus, nothing completed. */
   const resetCycle = useCallback(() => commit(INITIAL), [commit]);
 
@@ -108,7 +118,7 @@ export function usePomodoro(config: TimerConfig, onComplete: (finished: TimerPha
     else start();
   }, [state.status, pause, start]);
 
-  return { state, start, pause, toggle, reset, resetCycle };
+  return { state, start, pause, toggle, reset, resetCycle, selectPhase };
 }
 
 /** Remaining milliseconds for display, given the current clock tick. */
