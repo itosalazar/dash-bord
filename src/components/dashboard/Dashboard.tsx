@@ -172,6 +172,7 @@ export default function Dashboard() {
                   onToggle={pomodoro.toggle}
                   onReset={pomodoro.reset}
                   onChangeLength={setPhaseLength}
+                  onSelectPhase={pomodoro.selectPhase}
                 />
               ) : null
             }

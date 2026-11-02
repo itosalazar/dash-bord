@@ -2,12 +2,12 @@
 
 import { useRef } from "react";
 import { Icon } from "@/components/ui/Icon";
-import type { TimerPhase, TimerStatus } from "@/hooks/usePomodoro";
+import { TIMER_PHASES, type TimerPhase, type TimerStatus } from "@/hooks/usePomodoro";
 import styles from "./dashboard.module.css";
 
 const TICKS = 60;
 const SWIPE_PX = 28;
-const PHASE_LABEL: Record<TimerPhase, string> = { focus: "focus", short: "break", long: "long break" };
+const PHASE_LABEL: Record<TimerPhase, string> = { focus: "focus", short: "short break", long: "long break" };
 
 /** Quick lengths per phase (minutes); the user's own setting is always included. */
 const PRESETS: Record<TimerPhase, number[]> = {
@@ -40,9 +40,44 @@ function Chevron({ direction }: { direction: "left" | "right" }) {
 }
 
 /**
- * A ring of 60 ticks that empties clockwise as the phase runs — the ticking
- * dial from the references. Tap the ring to start / pause. While stopped, the
- * ‹ › arrows (or a sideways swipe on the dial) step through preset lengths.
+ * Each phase has its own ring:
+ * focus — 60 ticks that empty clockwise (the ticking dial from the references);
+ * short break — a smooth accent gradient arc;
+ * long break — a ring of round dots.
+ */
+function Ring({ phase, fraction, running }: { phase: TimerPhase; fraction: number; running: boolean }) {
+  const lit = Math.ceil(fraction * TICKS);
+  const head = TICKS - lit;
+
+  if (phase === "short") {
+    return (
+      <span
+        className={styles.timerGradient}
+        style={{ "--elapsed": `${(1 - fraction).toFixed(4)}turn` } as React.CSSProperties}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  return (
+    <svg className={styles.timerRing} viewBox="0 0 100 100" aria-hidden="true">
+      {Array.from({ length: TICKS }, (_, i) => {
+        const angle = (i / TICKS) * 360;
+        const on = i >= head;
+        const cls = running && i === head && lit > 0 ? styles.tickHead : on ? styles.tickOn : styles.tickOff;
+        if (phase === "long") {
+          return <circle key={i} cx="50" cy="6.5" r={i % 5 === 0 ? 1.9 : 1.3} transform={`rotate(${angle} 50 50)`} className={cls} />;
+        }
+        return <line key={i} x1="50" y1={i % 5 === 0 ? 3 : 4.5} x2="50" y2="10" transform={`rotate(${angle} 50 50)`} className={cls} />;
+      })}
+    </svg>
+  );
+}
+
+/**
+ * The focus timer tile. Tap the dial to start / pause. While stopped:
+ * swipe sideways (or ← → keys) to switch focus / short break / long break,
+ * and use the ‹ › arrows to step through preset lengths.
  */
 export function PomodoroTimer({
   phase,
@@ -56,6 +91,7 @@ export function PomodoroTimer({
   onToggle,
   onReset,
   onChangeLength,
+  onSelectPhase,
 }: {
   phase: TimerPhase;
   status: TimerStatus;
@@ -69,17 +105,24 @@ export function PomodoroTimer({
   onToggle: () => void;
   onReset: () => void;
   onChangeLength: (minutes: number) => void;
+  onSelectPhase: (phase: TimerPhase) => void;
 }) {
   const fraction = totalMs > 0 ? remainingMs / totalMs : 0;
-  const lit = Math.ceil(fraction * TICKS);
-  const head = TICKS - lit;
   const minutesLeft = Math.ceil(remainingMs / 60_000);
   const [mm, ss] = minutesSeconds(remainingMs);
   const idle = status === "idle";
+  const index = TIMER_PHASES.indexOf(phase);
+  const previousPhase = TIMER_PHASES[index - 1] ?? null;
+  const nextPhase = TIMER_PHASES[index + 1] ?? null;
 
-  // Swipe detection: a sideways drag changes the length instead of toggling.
+  // Swipe detection: a sideways drag switches phase instead of toggling.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
+
+  const step = (direction: -1 | 1) => {
+    const target = direction === 1 ? nextPhase : previousPhase;
+    if (idle && target) onSelectPhase(target);
+  };
 
   const label =
     status === "running"
@@ -94,6 +137,7 @@ export function PomodoroTimer({
         type="button"
         className={styles.timerButton}
         aria-label={label}
+        aria-keyshortcuts={idle ? "ArrowLeft ArrowRight" : undefined}
         onPointerDown={(e) => {
           swiped.current = false;
           swipeStart.current = idle ? { x: e.clientX, y: e.clientY } : null;
@@ -105,12 +149,17 @@ export function PomodoroTimer({
           const dx = e.clientX - start.x;
           if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(e.clientY - start.y)) return;
           swiped.current = true;
-          // Swipe left = longer, like turning a dial forward.
-          const target = dx < 0 ? longer : shorter;
-          if (target !== null) onChangeLength(target);
+          // Swipe left = next phase (focus → short → long), like flipping a page.
+          step(dx < 0 ? 1 : -1);
         }}
         onPointerCancel={() => {
           swipeStart.current = null;
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            e.preventDefault();
+            step(e.key === "ArrowRight" ? 1 : -1);
+          }
         }}
         onClick={() => {
           if (swiped.current) {
@@ -120,26 +169,9 @@ export function PomodoroTimer({
           onToggle();
         }}
       >
-        <svg className={styles.timerRing} viewBox="0 0 100 100" aria-hidden="true">
-          {Array.from({ length: TICKS }, (_, i) => {
-            const angle = (i / TICKS) * 360;
-            const on = i >= head;
-            const isHead = !idle && i === head && lit > 0;
-            return (
-              <line
-                key={i}
-                x1="50"
-                y1={i % 5 === 0 ? 3 : 4.5}
-                x2="50"
-                y2="10"
-                transform={`rotate(${angle} 50 50)`}
-                className={isHead ? styles.tickHead : on ? styles.tickOn : styles.tickOff}
-              />
-            );
-          })}
-        </svg>
+        <Ring phase={phase} fraction={fraction} running={!idle} />
         <span className={styles.timerCenter} aria-hidden="true">
-          <span className={styles.timerPhase}>{PHASE_LABEL[phase]}</span>
+          <span className={styles.timerPhase}>{phase === "focus" ? "focus" : phase === "short" ? "break" : "long break"}</span>
           <span className={styles.timerTime}>
             {mm}
             <span className={styles.timerColon}>:</span>
@@ -148,11 +180,29 @@ export function PomodoroTimer({
           <span className={styles.timerSub}>
             {idle ? "tap to start" : status === "paused" ? "paused" : phase === "focus" ? `${session} / ${sessionsBeforeLong}` : "rest"}
           </span>
+          {idle ? (
+            <span className={styles.timerPager}>
+              {TIMER_PHASES.map((p) => (
+                <i key={p} data-active={p === phase} />
+              ))}
+            </span>
+          ) : null}
         </span>
       </button>
 
       {idle ? (
         <>
+          {/* Screen-reader / switch-control path for what a swipe does. */}
+          {previousPhase ? (
+            <button type="button" className="sr-only" onClick={() => onSelectPhase(previousPhase)}>
+              Switch timer to {PHASE_LABEL[previousPhase]}
+            </button>
+          ) : null}
+          {nextPhase ? (
+            <button type="button" className="sr-only" onClick={() => onSelectPhase(nextPhase)}>
+              Switch timer to {PHASE_LABEL[nextPhase]}
+            </button>
+          ) : null}
           <button
             type="button"
             className={`${styles.timerArrow} ${styles.timerArrowLeft}`}

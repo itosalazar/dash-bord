@@ -386,6 +386,59 @@
   stroke: var(--accent);
 }
 
+/* Long break: the same 60 positions drawn as round dots. */
+.timerRing circle {
+  stroke: none;
+  transition: fill 0.4s;
+}
+
+.timerRing circle.tickOn {
+  fill: var(--accent);
+}
+
+.timerRing circle.tickOff {
+  fill: var(--tile-dark-line);
+}
+
+.timerRing circle.tickHead {
+  fill: var(--tile-dark-text);
+}
+
+/* Short break: a smooth accent gradient that shrinks clockwise.
+   --elapsed (0–1turn) is set inline; the mask cuts the disc into a band. */
+.timerGradient {
+  position: absolute;
+  inset: 3%;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--tile-dark-line) 0turn var(--elapsed),
+    color-mix(in srgb, var(--accent) 12%, transparent) var(--elapsed),
+    var(--accent) 1turn
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent 84.5%, #000 85.5%);
+  mask: radial-gradient(farthest-side, transparent 84.5%, #000 85.5%);
+}
+
+/* Which of focus / short / long is selected (shown while stopped). */
+.timerPager {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 1cqh;
+}
+
+.timerPager i {
+  width: max(4px, 2.6cqw);
+  height: max(4px, 2.6cqw);
+  border-radius: 50%;
+  background: var(--tile-dark-line);
+  transition: background 0.2s;
+}
+
+.timerPager i[data-active="true"] {
+  background: var(--accent);
+}
+
 .timerCenter {
   display: grid;
   justify-items: center;
