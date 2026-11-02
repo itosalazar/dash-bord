@@ -2,6 +2,7 @@ import "server-only";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { z } from "zod";
+import { allowedHostsLabel, isHostAllowed } from "@/lib/server/allowlist";
 import type { Cue } from "@/lib/types";
 import type { QuoteProvider } from "../types";
 
@@ -67,6 +68,9 @@ export async function assertPublicHttpsUrl(raw: string): Promise<URL> {
 
 export async function fetchRemoteCues(raw: string): Promise<Cue[]> {
   const url = await assertPublicHttpsUrl(raw);
+  if (!isHostAllowed(url, "cues")) {
+    throw new FeedError(`This dash-bord only reads cue feeds from ${allowedHostsLabel("cues")}.`);
+  }
   const res = await fetch(url, {
     redirect: "error",
     cache: "no-store",

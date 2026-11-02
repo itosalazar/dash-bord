@@ -25,6 +25,18 @@ export const env = {
     return process.env.NODE_ENV === "production";
   },
 
+  /** DASHBORD_OPEN=true: no login; database sync and OAuth sign-ins are switched off. */
+  get isOpen() {
+    return read("DASHBORD_OPEN") === "true";
+  },
+  /** Extra hostnames the server may fetch user-supplied feeds from (comma-separated). */
+  get extraFeedHosts(): string[] {
+    return (read("DASHBORD_ALLOWED_FEED_HOSTS") ?? "")
+      .split(",")
+      .map((h) => h.trim().toLowerCase())
+      .filter(Boolean);
+  },
+
   /* auth */
   get passphrase() {
     return read("DASHBORD_PASSPHRASE");
@@ -48,13 +60,16 @@ export const env = {
 
   /* providers */
   get calendarProvider(): CalendarProviderId {
-    return oneOf("CALENDAR_PROVIDER", ["mock", "google"] as const, "mock");
+    // Google OAuth stores tokens server-side, which open mode never does.
+    if (this.isOpen) return "mock";
+    return oneOf("CALENDAR_PROVIDER", ["mock", "google"] as const satisfies readonly CalendarProviderId[], "mock");
   },
   get weatherProvider(): WeatherProviderId {
     return oneOf("WEATHER_PROVIDER", ["mock", "open-meteo", "openweathermap"] as const, "mock");
   },
   get inspirationProvider(): InspirationMode {
-    return oneOf("INSPIRATION_PROVIDER", ["auto", "mock", "rss", "pinterest"] as const, "auto");
+    const mode = oneOf("INSPIRATION_PROVIDER", ["auto", "mock", "rss", "pinterest"] as const, "auto");
+    return this.isOpen && mode === "pinterest" ? "auto" : mode;
   },
 
   get googleClientId() {

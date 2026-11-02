@@ -7,6 +7,7 @@ import { useAppStatus } from "@/hooks/useAppStatus";
 import { useClock } from "@/hooks/useClock";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useOnline } from "@/hooks/useOnline";
+import { phaseMinutes, remainingFor, usePomodoro, type TimerPhase } from "@/hooks/usePomodoro";
 import { bucketFor, pickIndex, useRotation } from "@/hooks/useRotation";
 import { useSettings } from "@/hooks/useSettings";
 import { useWakeLock } from "@/hooks/useWakeLock";
@@ -17,6 +18,7 @@ import { CalendarTile } from "./CalendarTile";
 import { ClockPanel } from "./ClockPanel";
 import { CueTile } from "./CueTile";
 import { InspirationTile } from "./InspirationTile";
+import { PomodoroTimer } from "./PomodoroTimer";
 import { WeatherTile } from "./WeatherTile";
 import styles from "./dashboard.module.css";
 
@@ -31,6 +33,7 @@ const OAUTH_MESSAGES: Record<string, string> = {
   no_refresh_token: "No refresh token was returned. Remove dash-bord's access in your account settings and connect again.",
   scope: "The read-only calendar permission was not granted.",
   exchange: "The provider rejected the sign-in. Try again in a moment.",
+  open: "Account sign-ins are off in open mode — paste your calendar and board links in Settings instead.",
 };
 
 /** Reads ?settings=…&connected=1|error=… left by an OAuth round-trip, once. */
@@ -97,6 +100,23 @@ export default function Dashboard() {
 
   const openSettings = useCallback((section: SettingsSection = "display") => setSettingsOpen(section), []);
 
+  /* -- focus timer */
+  const timerConfig = settings.timer;
+  const onTimerComplete = useCallback(
+    (finished: TimerPhase, next: TimerPhase) => {
+      const minutes = phaseMinutes(next, timerConfig);
+      setToast(
+        finished === "focus"
+          ? `Focus done. Time for a ${minutes}-minute ${next === "long" ? "long break" : "break"}.`
+          : `Break's over. Ready for ${minutes} minutes of focus?`,
+      );
+    },
+    [timerConfig],
+  );
+  const pomodoro = usePomodoro(timerConfig, onTimerComplete);
+  const timerRemaining = remainingFor(pomodoro.state, timerConfig, nowMs);
+  const timerTotal = phaseMinutes(pomodoro.state.phase, timerConfig) * 60_000;
+
   const toggleDesk = useCallback(() => {
     if (desk.state === "unsupported") {
       setSettingsOpen("desk");
@@ -121,7 +141,7 @@ export default function Dashboard() {
   return (
     <>
       <main className={styles.desk} data-dim={dim} aria-label="dash-bord desk">
-        <div className={styles.top}>
+        <div className={styles.main}>
           <ClockPanel
             nowMs={nowMs}
             timeZone={timeZone}
@@ -133,34 +153,49 @@ export default function Dashboard() {
             showInstall={showInstall}
             onToggleDesk={toggleDesk}
             onOpenSettings={() => openSettings()}
+            timer={
+              timerConfig.enabled ? (
+                <PomodoroTimer
+                  phase={pomodoro.state.phase}
+                  status={pomodoro.state.status}
+                  remainingMs={timerRemaining}
+                  totalMs={timerTotal}
+                  session={(pomodoro.state.completedFocus % timerConfig.sessionsBeforeLong) + 1}
+                  sessionsBeforeLong={timerConfig.sessionsBeforeLong}
+                  onToggle={pomodoro.toggle}
+                  onReset={pomodoro.reset}
+                />
+              ) : null
+            }
           />
-          <WeatherTile slot={data.weather} nowMs={nowMs} onRetry={data.refresh.weather} onOpenSettings={() => openSettings("weather")} />
-          <CalendarTile
-            slot={data.calendar}
-            nowMs={nowMs}
-            timeZone={timeZone}
-            timeFormat={settings.display.timeFormat}
-            windowHours={settings.calendar.windowHours}
-            onRetry={data.refresh.calendar}
-            onOpenSettings={() => openSettings("calendar")}
-          />
+          <div className={styles.info}>
+            <WeatherTile slot={data.weather} nowMs={nowMs} onRetry={data.refresh.weather} onOpenSettings={() => openSettings("weather")} />
+            <CalendarTile
+              slot={data.calendar}
+              nowMs={nowMs}
+              timeZone={timeZone}
+              timeFormat={settings.display.timeFormat}
+              windowHours={settings.calendar.windowHours}
+              onRetry={data.refresh.calendar}
+              onOpenSettings={() => openSettings("calendar")}
+            />
+          </div>
         </div>
-        <div className={styles.bottom}>
-          <InspirationTile
-            slot={data.inspiration}
-            pin={pin}
-            index={pinIndex}
-            nowMs={nowMs}
-            onNext={() => advance("pin")}
-            onRetry={data.refresh.inspiration}
-            onOpenSettings={() => openSettings("inspiration")}
-          />
+        <div className={styles.side}>
           <CueTile
             cue={cue}
             index={Math.max(0, cueIndex)}
             total={pool.length}
             showAttribution={settings.cues.showAttribution}
             onNext={() => advance("cue")}
+          />
+          <InspirationTile
+            slot={data.inspiration}
+            pin={pin}
+            nowMs={nowMs}
+            onNext={() => advance("pin")}
+            onRetry={data.refresh.inspiration}
+            onOpenSettings={() => openSettings("inspiration")}
           />
         </div>
       </main>

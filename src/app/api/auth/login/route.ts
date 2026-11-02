@@ -21,7 +21,9 @@ export async function POST(request: Request) {
   const next = safeNext(form?.get("next") ?? null);
   const redirect = (path: string) => Response.redirect(new URL(path, request.url), 303);
 
-  if (authMode().kind !== "enabled") return redirect("/login?error=config");
+  const mode = authMode().kind;
+  if (mode === "public" || mode === "open") return redirect("/");
+  if (mode !== "enabled") return redirect("/login?error=config");
 
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   const now = Date.now();

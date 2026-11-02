@@ -7,7 +7,7 @@ import type { Slot } from "@/hooks/useResource";
 import type { SettingsSync } from "@/hooks/useSettings";
 import type { DeskModeState } from "@/hooks/useWakeLock";
 import { removeKey, STORAGE_KEYS } from "@/lib/client/storage";
-import { parsePinterestBoardUrl, ROTATION_CADENCES } from "@/lib/settings";
+import { type Accent, parsePinterestBoardUrl, ROTATION_CADENCES } from "@/lib/settings";
 import { agoLabel, deviceTimeZone } from "@/lib/time";
 import { Group, Segmented, StatusDot, Switch } from "./controls";
 import type { SectionProps } from "./SettingsSheet";
@@ -21,6 +21,13 @@ const CADENCE_LABELS: Record<(typeof ROTATION_CADENCES)[number], string> = {
 };
 
 /* ---------------------------------------------------------------- display */
+
+const ACCENT_OPTIONS: { value: Accent; label: string; color: string }[] = [
+  { value: "vermilion", label: "vermilion", color: "#f4582f" },
+  { value: "signal", label: "signal yellow", color: "#f5c21b" },
+  { value: "cobalt", label: "cobalt", color: "#4f8dff" },
+  { value: "mint", label: "mint", color: "#3cc48a" },
+];
 
 function timeZones(): string[] {
   try {
@@ -67,6 +74,21 @@ export function DisplaySection({ settings, update }: SectionProps) {
         ]}
         onChange={(theme) => set({ theme })}
       />
+      <fieldset className={styles.group}>
+        <legend>accent colour</legend>
+        <div className={styles.segmented}>
+          {ACCENT_OPTIONS.map((option) => (
+            <label key={option.value} className={styles.segment}>
+              <input type="radio" name="accent" value={option.value} checked={d.accent === option.value} onChange={() => set({ accent: option.value })} />
+              <span>
+                <i className={styles.swatch} style={{ background: option.color }} aria-hidden="true" />
+                {option.label}
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className={styles.hint}>Colours the cue card, the timer, the clock&apos;s colon and every small highlight.</p>
+      </fieldset>
       <Switch
         label="Dim at night"
         description="softens the whole desk between 22:00 and 06:00"
@@ -276,10 +298,7 @@ export function CalendarSection({ settings, update, status, reloadStatus, data, 
           }}
         />
       ) : (
-        <p className={styles.hint}>
-          Showing the demo calendar. Set CALENDAR_PROVIDER=google and the Google OAuth variables on the server to connect your real
-          calendar (see README).
-        </p>
+        <IcsLinkField value={c.icsUrl} onSave={(icsUrl) => set({ icsUrl })} />
       )}
       <Segmented
         legend="look ahead"
@@ -297,6 +316,84 @@ export function CalendarSection({ settings, update, status, reloadStatus, data, 
         <Switch label="Private events" description="events marked private or confidential" checked={c.hidePrivate} onChange={(hidePrivate) => set({ hidePrivate })} />
       </Group>
     </>
+  );
+}
+
+/** "Secret address in iCal format": stored on this device, shown masked, sent only in request bodies. */
+function IcsLinkField({ value, onSave }: { value: string; onSave: (value: string) => void }) {
+  const [editing, setEditing] = useState(!value);
+  const [draft, setDraft] = useState("");
+  const trimmed = draft.trim();
+  const valid = /^(https|webcal):\/\/\S+$/i.test(trimmed);
+
+  if (value && !editing) {
+    const tail = value.split("/").pop() ?? "";
+    return (
+      <Group label="calendar link (ical)">
+        <div className={styles.statusCard}>
+          <div className={styles.statusLine}>
+            <span className={styles.statusName}>
+              <StatusDot tone="ok" />
+              Linked · ••••/{tail.length > 24 ? `…${tail.slice(-18)}` : tail}
+            </span>
+            <span className={styles.inputRow}>
+              <button type="button" className={`${styles.button} ${styles.ghost}`} onClick={() => setEditing(true)}>
+                replace
+              </button>
+              <button type="button" className={`${styles.button} ${styles.ghost}`} onClick={() => onSave("")}>
+                remove
+              </button>
+            </span>
+          </div>
+          <p className={styles.statusMeta}>
+            Stored on this device only and sent privately to dash-bord&apos;s server. Anyone with this link can read your calendar — if
+            it leaks, use Reset in Google Calendar and paste the new one.
+          </p>
+        </div>
+      </Group>
+    );
+  }
+
+  return (
+    <Group label="calendar link (ical)">
+      <p className={styles.prose}>
+        Showing the demo calendar until you add a link. In Google Calendar on a computer: ⚙ Settings → your calendar → Integrate
+        calendar → copy <strong>Secret address in iCal format</strong>. iCloud and Outlook calendar links work too.
+      </p>
+      <form
+        className={styles.inputRow}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!valid) return;
+          onSave(trimmed);
+          setDraft("");
+          setEditing(false);
+        }}
+      >
+        <input
+          className={styles.input}
+          type="url"
+          inputMode="url"
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+          aria-label="Calendar iCal link"
+          aria-invalid={trimmed !== "" && !valid}
+        />
+        <button type="submit" className={styles.button} disabled={!valid}>
+          save
+        </button>
+        {value ? (
+          <button type="button" className={`${styles.button} ${styles.ghost}`} onClick={() => setEditing(false)}>
+            cancel
+          </button>
+        ) : null}
+      </form>
+      {trimmed !== "" && !valid ? <p className={styles.error}>Paste the full link, starting with https://</p> : null}
+    </Group>
   );
 }
 
@@ -405,9 +502,11 @@ export function DataSection({ status, data, nowMs, sync }: SectionProps & { sync
       ) : null}
       <Group label="settings storage">
         <p className={styles.prose}>
-          {sync === "saved" || status?.database
-            ? "Settings are saved on this device and synced to your private database."
-            : "Settings are saved on this device only. Add DATABASE_URL on the server to sync them."}
+          {status?.open
+            ? "Settings are saved on this device only (open mode never stores them on the server)."
+            : sync === "saved" || status?.database
+              ? "Settings are saved on this device and synced to your private database."
+              : "Settings are saved on this device only. Add DATABASE_URL on the server to sync them."}
         </p>
       </Group>
       {status?.auth.enabled ? (
@@ -416,6 +515,11 @@ export function DataSection({ status, data, nowMs, sync }: SectionProps & { sync
             sign out
           </button>
         </form>
+      ) : status?.open ? (
+        <p className={styles.hint}>
+          Open mode: anyone with this address can use dash-bord, so nothing personal is stored on the server — your links and
+          settings live only on this device.
+        </p>
       ) : (
         <p className={styles.hint}>Sign-in is disabled in local development. Set DASHBORD_PASSPHRASE and AUTH_SECRET to require it.</p>
       )}

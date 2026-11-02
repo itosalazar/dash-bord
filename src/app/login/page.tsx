@@ -47,10 +47,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <code>AUTH_SECRET</code> in your Vercel project settings and redeploy.
             </p>
           </>
-        ) : mode.kind === "open" ? (
+        ) : mode.kind === "open" || mode.kind === "public" ? (
           <>
             <h1 className={styles.title}>No sign-in needed</h1>
-            <p className={styles.body}>Local development without a passphrase — the desk is open.</p>
+            <p className={styles.body}>
+              {mode.kind === "public"
+                ? "This dash-bord is open. Your calendar and Pinterest links are saved only on your own device."
+                : "Local development without a passphrase — the desk is open."}
+            </p>
             <div className={styles.row}>
               <Link className={styles.button} href="/">
                 open the desk

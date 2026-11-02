@@ -34,6 +34,9 @@ export const ROTATION_CADENCES = ["manual", "hourly", "daily", "launch"] as cons
 export const CUE_CADENCES = ["manual", "15m", "hourly", "daily", "launch"] as const;
 export const CUE_SOURCES = ["builtin", "personal", "remote", "mixed"] as const;
 export const THEMES = ["graphite", "noir", "paper"] as const;
+/** Accent palette (all readable with black text on top, and as large text on the desk). */
+export const ACCENTS = ["vermilion", "signal", "cobalt", "mint"] as const;
+export type Accent = (typeof ACCENTS)[number];
 
 export const settingsSchema = z.object({
   version: z.literal(1),
@@ -44,6 +47,7 @@ export const settingsSchema = z.object({
     /** "auto" uses the device time zone, otherwise an IANA name. */
     timeZone: z.string().min(1).max(64),
     theme: z.enum(THEMES),
+    accent: z.enum(ACCENTS),
     nightDim: z.boolean(),
   }),
   weather: z.object({
@@ -53,6 +57,8 @@ export const settingsSchema = z.object({
     location: locationSchema.nullable(),
   }),
   calendar: z.object({
+    /** Private iCal link ("Secret address in iCal format"). Treat like a password. */
+    icsUrl: z.string().trim().max(1000),
     windowHours: z.number().int().min(1).max(72),
     hideDeclined: z.boolean(),
     hideAllDay: z.boolean(),
@@ -69,6 +75,17 @@ export const settingsSchema = z.object({
     remoteUrl: z.string().trim().max(500),
     personal: z.array(personalCueSchema).max(200),
   }),
+  /** Pomodoro focus timer shown beside the clock. Lengths in minutes. */
+  timer: z.object({
+    enabled: z.boolean(),
+    focusMinutes: z.number().int().min(1).max(180),
+    shortBreakMinutes: z.number().int().min(1).max(60),
+    longBreakMinutes: z.number().int().min(1).max(90),
+    sessionsBeforeLong: z.number().int().min(2).max(8),
+    autoStartNext: z.boolean(),
+    sound: z.boolean(),
+    volume: z.enum(["soft", "medium", "loud"]),
+  }),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -81,6 +98,7 @@ export const DEFAULT_SETTINGS: Settings = {
     showSeconds: true,
     timeZone: "auto",
     theme: "graphite",
+    accent: "vermilion",
     nightDim: true,
   },
   weather: {
@@ -89,6 +107,7 @@ export const DEFAULT_SETTINGS: Settings = {
     location: null,
   },
   calendar: {
+    icsUrl: "",
     windowHours: 24,
     hideDeclined: true,
     hideAllDay: false,
@@ -104,6 +123,16 @@ export const DEFAULT_SETTINGS: Settings = {
     showAttribution: false,
     remoteUrl: "",
     personal: [],
+  },
+  timer: {
+    enabled: true,
+    focusMinutes: 25,
+    shortBreakMinutes: 5,
+    longBreakMinutes: 15,
+    sessionsBeforeLong: 4,
+    autoStartNext: false,
+    sound: true,
+    volume: "medium",
   },
 };
 
@@ -122,12 +151,13 @@ export function normalizeSettings(input: unknown): Settings {
     calendar: { ...DEFAULT_SETTINGS.calendar, ...(raw.calendar as object) },
     inspiration: { ...DEFAULT_SETTINGS.inspiration, ...(raw.inspiration as object) },
     cues: { ...DEFAULT_SETTINGS.cues, ...(raw.cues as object) },
+    timer: { ...DEFAULT_SETTINGS.timer, ...(raw.timer as object) },
   };
   const parsed = settingsSchema.safeParse(merged);
   if (parsed.success) return parsed.data;
 
   // Recover per section so one bad field does not wipe everything.
-  const sections = ["display", "weather", "calendar", "inspiration", "cues"] as const;
+  const sections = ["display", "weather", "calendar", "inspiration", "cues", "timer"] as const;
   const recovered: Settings = { ...DEFAULT_SETTINGS, updatedAt: merged.updatedAt };
   for (const key of sections) {
     const section = settingsSchema.shape[key].safeParse(merged[key]);

@@ -18,6 +18,7 @@ export function redirectUri(provider: OAuthProvider, request: Request): string {
 
 /** Returns a human-readable reason when the server can't run this OAuth flow. */
 export function oauthUnavailableReason(provider: OAuthProvider): string | null {
+  if (env.isOpen) return "open";
   if (!hasDatabase()) return "database";
   if (!canEncrypt()) return "encryption";
   if (provider === "google" && (!env.googleClientId || !env.googleClientSecret)) return "client";

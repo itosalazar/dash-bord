@@ -28,6 +28,7 @@ export async function GET() {
     inspirationProvider: env.inspirationProvider,
     database: hasDatabase(),
     auth: { enabled: authMode().kind === "enabled" },
+    open: env.isOpen,
     google: { configured: Boolean(env.googleClientId && env.googleClientSecret), ...google },
     pinterest: { configured: Boolean(env.pinterestAppId && env.pinterestAppSecret), ...pinterest },
   };

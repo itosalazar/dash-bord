@@ -19,6 +19,7 @@ export function useSettings() {
   useEffect(() => {
     latest.current = settings;
     document.documentElement.dataset.theme = settings.display.theme;
+    document.documentElement.dataset.accent = settings.display.accent;
   }, [settings]);
 
   useEffect(() => {

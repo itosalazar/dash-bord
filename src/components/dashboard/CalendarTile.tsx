@@ -31,7 +31,9 @@ export function CalendarTile({
   const live = (slot.data?.events ?? []).filter((e) => Date.parse(e.end) > nowMs);
   const events = [...live.filter((e) => !e.allDay), ...live.filter((e) => e.allDay)];
   const visible = events.slice(0, MAX_VISIBLE);
-  const needsConnection = !slot.data && (slot.error?.code === "not_connected" || slot.error?.code === "unauthorized" || slot.error?.code === "not_configured");
+  const badLink = slot.error?.code === "invalid";
+  const needsConnection =
+    !slot.data && (badLink || slot.error?.code === "not_connected" || slot.error?.code === "unauthorized" || slot.error?.code === "not_configured");
 
   return (
     <section className={`${styles.tile} ${styles.dark}`} aria-labelledby="calendar-label">
@@ -85,11 +87,11 @@ export function CalendarTile({
       {!slot.data && !slot.loading && slot.error ? (
         <div style={{ position: "absolute", inset: 0 }}>
           <TileEmpty
-            title={needsConnection ? "Calendar not connected" : "Calendar unavailable"}
+            title={badLink ? "Check the calendar link" : needsConnection ? "Calendar not connected" : "Calendar unavailable"}
             body={slot.error.message}
             action={
               <button type="button" className={styles.retry} onClick={needsConnection ? onOpenSettings : onRetry}>
-                {needsConnection ? "connect" : "retry"}
+                {badLink ? "settings" : needsConnection ? "connect" : "retry"}
               </button>
             }
           />

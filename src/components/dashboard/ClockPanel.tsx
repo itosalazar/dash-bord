@@ -1,6 +1,5 @@
 "use client";
 
-import { DotText } from "@/components/ui/DotMatrix";
 import { Icon } from "@/components/ui/Icon";
 import { useLongPress } from "@/hooks/useLongPress";
 import type { DeskModeState } from "@/hooks/useWakeLock";
@@ -27,6 +26,7 @@ export function ClockPanel({
   showInstall,
   onToggleDesk,
   onOpenSettings,
+  timer,
 }: {
   nowMs: number;
   timeZone: string;
@@ -38,6 +38,8 @@ export function ClockPanel({
   showInstall: boolean;
   onToggleDesk: () => void;
   onOpenSettings: () => void;
+  /** Optional focus timer shown to the right of the time. */
+  timer?: React.ReactNode;
 }) {
   const longPress = useLongPress(onOpenSettings);
   const date = new Date(nowMs);
@@ -48,6 +50,7 @@ export function ClockPanel({
 
   return (
     <section className={styles.clockZone} aria-label="Clock">
+      <div className={styles.clockRow}>
       <div
         className={styles.clockFace}
         {...longPress}
@@ -63,10 +66,12 @@ export function ClockPanel({
           {showSeconds || face.period ? (
             <span className={styles.timeSide}>
               {face.period ? <span className={styles.period}>{face.period}</span> : null}
-              {showSeconds ? <DotText text={face.seconds} className={styles.seconds} /> : null}
+              {showSeconds ? <span className={styles.seconds}>{face.seconds}</span> : null}
             </span>
           ) : null}
         </div>
+      </div>
+      {timer}
       </div>
 
       <div className={styles.meta}>

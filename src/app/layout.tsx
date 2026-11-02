@@ -37,8 +37,8 @@ export const viewport: Viewport = {
   themeColor: "#3b4048",
 };
 
-// Applies the saved theme before first paint so the desk never flashes.
-const themeScript = `try{var s=JSON.parse(localStorage.getItem("dashbord:settings")||"null");var t=s&&s.display&&s.display.theme;if(t)document.documentElement.dataset.theme=t;}catch(e){}`;
+// Applies the saved theme and accent before first paint so the desk never flashes.
+const themeScript = `try{var s=JSON.parse(localStorage.getItem("dashbord:settings")||"null");var d=s&&s.display;if(d&&d.theme)document.documentElement.dataset.theme=d.theme;if(d&&d.accent)document.documentElement.dataset.accent=d.accent;}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -9,14 +9,16 @@ import type { Settings } from "@/lib/settings";
 import type { AppStatus } from "@/lib/types";
 import { AboutSection } from "./AboutSection";
 import { CuesSection } from "./CuesSection";
+import { TimerSection } from "./TimerSection";
 import { CalendarSection, DataSection, DeskSection, DisplaySection, InspirationSection, WeatherSection } from "./sections";
 import styles from "./settings.module.css";
 
-export type SettingsSection = "display" | "desk" | "weather" | "calendar" | "inspiration" | "cues" | "data" | "about";
+export type SettingsSection = "display" | "desk" | "timer" | "weather" | "calendar" | "inspiration" | "cues" | "data" | "about";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
   { id: "display", label: "Display" },
   { id: "desk", label: "Desk mode" },
+  { id: "timer", label: "Focus timer" },
   { id: "weather", label: "Weather" },
   { id: "calendar", label: "Calendar" },
   { id: "inspiration", label: "Inspiration" },
@@ -127,6 +129,7 @@ export function SettingsSheet({
             <div className={styles.panelInner}>
               {section === "display" ? <DisplaySection {...props} /> : null}
               {section === "desk" ? <DeskSection state={deskState} onEnable={onEnableDesk} onDisable={onDisableDesk} /> : null}
+              {section === "timer" ? <TimerSection {...props} /> : null}
               {section === "weather" ? <WeatherSection {...props} /> : null}
               {section === "calendar" ? <CalendarSection {...props} /> : null}
               {section === "inspiration" ? <InspirationSection {...props} /> : null}

@@ -70,6 +70,8 @@ export interface CalendarQuery {
   hideDeclined: boolean;
   hideAllDay: boolean;
   hidePrivate: boolean;
+  /** Private iCal link from the user's settings (iCal provider only). */
+  icsUrl?: string;
 }
 
 /* ------------------------------------------------------------- inspiration */
@@ -103,7 +105,7 @@ export interface Cue {
 
 /* ------------------------------------------------------------------ status */
 
-export type CalendarProviderId = "mock" | "google";
+export type CalendarProviderId = "mock" | "google" | "ics";
 export type WeatherProviderId = "mock" | "open-meteo" | "openweathermap";
 export type InspirationProviderId = "mock" | "rss" | "pinterest";
 /** "auto" = public board RSS feed when a board URL is set, demo images otherwise. */
@@ -122,6 +124,8 @@ export interface AppStatus {
   inspirationProvider: InspirationMode;
   database: boolean;
   auth: { enabled: boolean };
+  /** Open mode: no sign-in, no server-side storage, feeds limited to known hosts. */
+  open: boolean;
   google: ConnectionStatus;
   pinterest: ConnectionStatus;
 }

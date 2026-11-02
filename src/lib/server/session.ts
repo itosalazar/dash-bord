@@ -17,9 +17,16 @@ function secretKey(): Uint8Array | null {
 export type AuthMode =
   | { kind: "enabled" }
   | { kind: "open" } // development without a passphrase
+  | { kind: "public" } // DASHBORD_OPEN=true — no sign-in by choice; server-side storage is disabled
   | { kind: "misconfigured"; reason: string }; // production without auth env — fail closed
 
+/** Open mode: anyone with the URL can use the desk. Personal links stay on each device. */
+export function isOpenMode(): boolean {
+  return process.env.DASHBORD_OPEN?.trim() === "true";
+}
+
 export function authMode(): AuthMode {
+  if (isOpenMode()) return { kind: "public" };
   const passphrase = process.env.DASHBORD_PASSPHRASE?.trim();
   const hasSecret = secretKey() !== null;
   if (passphrase && hasSecret) return { kind: "enabled" };
@@ -57,7 +64,7 @@ export async function verifySessionToken(token: string | undefined): Promise<boo
 /** Reads the session cookie from a request and checks it against the auth mode. */
 export async function isRequestAuthorized(cookieValue: string | undefined): Promise<boolean> {
   const mode = authMode();
-  if (mode.kind === "open") return true;
+  if (mode.kind === "open" || mode.kind === "public") return true;
   if (mode.kind === "misconfigured") return false;
   return verifySessionToken(cookieValue);
 }

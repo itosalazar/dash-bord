@@ -12,8 +12,9 @@ type Sql = ReturnType<typeof postgres>;
 
 const globalForDb = globalThis as unknown as { __dashbordSql?: Sql };
 
+/** False in open mode: nothing personal is ever stored server-side when anyone can open the app. */
 export function hasDatabase(): boolean {
-  return Boolean(env.databaseUrl);
+  return Boolean(env.databaseUrl) && !env.isOpen;
 }
 
 export function db(): Sql {

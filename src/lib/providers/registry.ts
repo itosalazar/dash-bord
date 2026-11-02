@@ -2,6 +2,7 @@ import "server-only";
 import { availableWeatherProviders, env } from "@/lib/server/env";
 import type { WeatherProviderId } from "@/lib/types";
 import { googleCalendarProvider } from "./calendar/google";
+import { icsCalendarProvider } from "./calendar/ics";
 import { mockCalendarProvider } from "./calendar/mock";
 import { mockInspirationProvider } from "./inspiration/mock";
 import { pinterestProvider } from "./inspiration/pinterest";
@@ -11,8 +12,10 @@ import { mockWeatherProvider, openMeteoProvider, openWeatherMapProvider } from "
 
 /** Env-driven provider selection. Mock is the default for everything. */
 
-export function calendarProvider(): CalendarProvider {
-  return env.calendarProvider === "google" ? googleCalendarProvider : mockCalendarProvider;
+/** Google OAuth when enabled on the server; else the user's iCal link; else the demo calendar. */
+export function calendarProvider(icsUrl?: string): CalendarProvider {
+  if (env.calendarProvider === "google") return googleCalendarProvider;
+  return icsUrl ? icsCalendarProvider : mockCalendarProvider;
 }
 
 const WEATHER: Record<WeatherProviderId, WeatherProvider> = {

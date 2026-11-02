@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   snapshot: "dashbord:snapshot:v1",
   rotation: "dashbord:rotation:v1",
   deskMode: "dashbord:desk-mode",
+  timer: "dashbord:timer:v1",
 } as const;
 
 export function readJson<T>(key: string): T | null {

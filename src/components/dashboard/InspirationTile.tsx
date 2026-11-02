@@ -9,7 +9,6 @@ import styles from "./dashboard.module.css";
 export function InspirationTile({
   slot,
   pin,
-  index,
   nowMs,
   onNext,
   onRetry,
@@ -17,7 +16,6 @@ export function InspirationTile({
 }: {
   slot: Slot<InspirationBoard>;
   pin: InspirationPin | null;
-  index: number;
   nowMs: number;
   onNext: () => void;
   onRetry: () => void;
@@ -86,31 +84,15 @@ export function InspirationTile({
         image
       )}
 
-      <div className={styles.overlay}>
-        <div className={styles.overlayRow}>
-          <div className={styles.chips}>
-            <h2 id="inspiration-label" className={styles.chip} style={{ margin: 0, fontWeight: 400 }}>
-              inspiration
-            </h2>
-            <span className={`${styles.chip} ${styles.chipLight}`}>{board.boardName}</span>
-          </div>
-          {total > 1 ? (
-            <button type="button" className={styles.roundButton} onClick={onNext} aria-label="Show another image from the board">
-              <Icon name="refresh" size={18} />
-            </button>
-          ) : null}
-        </div>
-        <div className={styles.overlayRow}>
-          <span className={styles.chip} aria-label={`Image ${index + 1} of ${total}`}>
-            {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-          </span>
-          {pin.link ? (
-            <span className={styles.chip} aria-hidden="true">
-              pin <Icon name="external" size={12} />
-            </span>
-          ) : null}
-        </div>
-      </div>
+      {/* The image speaks for itself: only the refresh control sits on top. */}
+      <h2 id="inspiration-label" className="sr-only">
+        Inspiration from {board.boardName}
+      </h2>
+      {total > 1 ? (
+        <button type="button" className={styles.refreshButton} onClick={onNext} aria-label={`Show another image from ${board.boardName}`}>
+          <Icon name="refresh" size={18} />
+        </button>
+      ) : null}
 
       <TileNotice slot={slot} nowMs={nowMs} staleAfterMs={REFRESH.inspiration * 4} onRetry={onRetry} name="inspiration" />
     </section>

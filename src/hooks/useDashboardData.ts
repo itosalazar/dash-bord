@@ -26,15 +26,16 @@ export function useDashboardData(settings: Settings, timeZone: string) {
     return `/api/weather?${q}`;
   }, [settings.weather, timeZone]);
 
-  const calendarUrl = useMemo(() => {
+  // Sent as a POST body so the private iCal link never appears in a URL or request log.
+  const calendarBody = useMemo(() => {
     const c = settings.calendar;
-    const q = new URLSearchParams({
-      hours: String(c.windowHours),
-      hideDeclined: c.hideDeclined ? "1" : "0",
-      hideAllDay: c.hideAllDay ? "1" : "0",
-      hidePrivate: c.hidePrivate ? "1" : "0",
+    return JSON.stringify({
+      hours: c.windowHours,
+      hideDeclined: c.hideDeclined,
+      hideAllDay: c.hideAllDay,
+      hidePrivate: c.hidePrivate,
+      icsUrl: c.icsUrl,
     });
-    return `/api/calendar?${q}`;
   }, [settings.calendar]);
 
   const inspirationUrl = `/api/inspiration?${new URLSearchParams({ board: settings.inspiration.boardUrl })}`;
@@ -44,7 +45,7 @@ export function useDashboardData(settings: Settings, timeZone: string) {
     wantsRemote && settings.cues.remoteUrl ? `/api/cues/remote?${new URLSearchParams({ url: settings.cues.remoteUrl })}` : null;
 
   const [weather, refreshWeather] = useResource<WeatherSnapshot>("weather", weatherUrl, REFRESH.weather);
-  const [calendar, refreshCalendar] = useResource<CalendarSnapshot>("calendar", calendarUrl, REFRESH.calendar);
+  const [calendar, refreshCalendar] = useResource<CalendarSnapshot>("calendar", "/api/calendar", REFRESH.calendar, calendarBody);
   const [inspiration, refreshInspiration] = useResource<InspirationBoard>("inspiration", inspirationUrl, REFRESH.inspiration);
   const [remoteCues, refreshRemoteCues] = useResource<Cue[]>("remoteCues", remoteUrl, REFRESH.remoteCues);
 

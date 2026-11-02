@@ -19,6 +19,7 @@ export interface Slot<T> {
 }
 
 interface CachedEntry {
+  /** Request signature: the URL, plus a hash of the POST body when there is one. */
   url: string;
   data: unknown;
   fetchedAt: string;
@@ -38,48 +39,66 @@ function writeSnapshotEntry(name: string, entry: CachedEntry | undefined) {
 /** Errors that mean "this data no longer applies", not "temporarily unreachable". */
 const CLEARS_DATA = new Set(["not_configured", "not_connected", "unauthorized", "invalid"]);
 
-function initialSlot<T>(name: string, url: string | null): Slot<T> {
-  const cached = url ? readSnapshot()[name] : undefined;
-  const usable = cached && cached.url === url;
+/** FNV-1a — lets the cache tell requests apart without storing the body (which may hold a private link). */
+function fingerprint(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return (hash >>> 0).toString(36);
+}
+
+function signatureOf(url: string | null, body: string | null): string | null {
+  return url && body ? `${url}#${fingerprint(body)}` : url;
+}
+
+function initialSlot<T>(name: string, signature: string | null): Slot<T> {
+  const cached = signature ? readSnapshot()[name] : undefined;
+  const usable = cached && cached.url === signature;
   return {
     data: usable ? (cached.data as T) : null,
     fetchedAt: usable ? cached.fetchedAt : null,
     source: usable ? cached.source : null,
     error: null,
-    loading: Boolean(url),
+    loading: Boolean(signature),
   };
 }
 
-export function useResource<T>(name: string, url: string | null, intervalMs: number | null) {
-  const [slot, setSlot] = useState<Slot<T>>(() => initialSlot<T>(name, url));
+/** `body` (a JSON string) turns the request into a POST — used for values that must stay out of URLs. */
+export function useResource<T>(name: string, url: string | null, intervalMs: number | null, body: string | null = null) {
+  const signature = signatureOf(url, body);
+  const [slot, setSlot] = useState<Slot<T>>(() => initialSlot<T>(name, signature));
   const lastSuccess = useRef<number>(slot.fetchedAt ? Date.parse(slot.fetchedAt) : 0);
   const generation = useRef(0);
 
   const load = useCallback(async () => {
-    if (!url) return;
+    if (!url || !signature) return;
     const run = ++generation.current;
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(
+        url,
+        body
+          ? { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body }
+          : { cache: "no-store" },
+      );
       if (res.status === 401) {
         // Session expired: a full navigation lets the proxy take over.
         window.location.replace(new URL("/login", window.location.href));
         return;
       }
-      const body = (await res.json()) as ProviderResult<T>;
+      const result = (await res.json()) as ProviderResult<T>;
       if (run !== generation.current) return;
-      if (body.ok) {
-        lastSuccess.current = Date.parse(body.fetchedAt);
-        setSlot({ data: body.data, fetchedAt: body.fetchedAt, source: body.source, error: null, loading: false });
-        writeSnapshotEntry(name, { url, data: body.data, fetchedAt: body.fetchedAt, source: body.source });
+      if (result.ok) {
+        lastSuccess.current = Date.parse(result.fetchedAt);
+        setSlot({ data: result.data, fetchedAt: result.fetchedAt, source: result.source, error: null, loading: false });
+        writeSnapshotEntry(name, { url: signature, data: result.data, fetchedAt: result.fetchedAt, source: result.source });
       } else {
-        const clear = CLEARS_DATA.has(body.error.code);
+        const clear = CLEARS_DATA.has(result.error.code);
         if (clear) writeSnapshotEntry(name, undefined);
         setSlot((s) => ({
           ...s,
           data: clear ? null : s.data,
           fetchedAt: clear ? null : s.fetchedAt,
-          source: body.source,
-          error: body.error,
+          source: result.source,
+          error: result.error,
           loading: false,
         }));
       }
@@ -94,7 +113,7 @@ export function useResource<T>(name: string, url: string | null, intervalMs: num
           : { code: "upstream", message: "Couldn't reach dash-bord's server." },
       }));
     }
-  }, [name, url]);
+  }, [name, url, body, signature]);
 
   /** Manual refresh: show a loading state immediately, then fetch. */
   const refresh = useCallback(() => {
