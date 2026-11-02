@@ -18,7 +18,7 @@ import { CalendarTile } from "./CalendarTile";
 import { ClockPanel } from "./ClockPanel";
 import { CueTile } from "./CueTile";
 import { InspirationTile } from "./InspirationTile";
-import { PomodoroTimer } from "./PomodoroTimer";
+import { neighbourLength, PomodoroTimer } from "./PomodoroTimer";
 import { WeatherTile } from "./WeatherTile";
 import styles from "./dashboard.module.css";
 
@@ -116,6 +116,11 @@ export default function Dashboard() {
   const pomodoro = usePomodoro(timerConfig, onTimerComplete);
   const timerRemaining = remainingFor(pomodoro.state, timerConfig, nowMs);
   const timerTotal = phaseMinutes(pomodoro.state.phase, timerConfig) * 60_000;
+  const currentLength = phaseMinutes(pomodoro.state.phase, timerConfig);
+  const setPhaseLength = (minutes: number) => {
+    const key = pomodoro.state.phase === "focus" ? "focusMinutes" : pomodoro.state.phase === "short" ? "shortBreakMinutes" : "longBreakMinutes";
+    update((s) => ({ ...s, timer: { ...s.timer, [key]: minutes } }));
+  };
 
   const toggleDesk = useCallback(() => {
     if (desk.state === "unsupported") {
@@ -162,8 +167,11 @@ export default function Dashboard() {
                   totalMs={timerTotal}
                   session={(pomodoro.state.completedFocus % timerConfig.sessionsBeforeLong) + 1}
                   sessionsBeforeLong={timerConfig.sessionsBeforeLong}
+                  shorter={neighbourLength(pomodoro.state.phase, currentLength, -1)}
+                  longer={neighbourLength(pomodoro.state.phase, currentLength, 1)}
                   onToggle={pomodoro.toggle}
                   onReset={pomodoro.reset}
+                  onChangeLength={setPhaseLength}
                 />
               ) : null
             }

@@ -343,7 +343,8 @@
   border-radius: 50%;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
+  /* Vertical panning stays with the browser; sideways drags are ours (swipe). */
+  touch-action: pan-y;
 }
 
 .timerButton:focus-visible {
@@ -436,6 +437,46 @@
   border-radius: 50%;
   background: var(--tile-dark);
   color: var(--tile-dark-text);
+}
+
+/* Length arrows: bottom corners of the tile, only while the timer is stopped. */
+.timerArrow {
+  position: absolute;
+  bottom: 6%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--tile-dark-line);
+  border-radius: 50%;
+  background: var(--tile-dark);
+  color: var(--tile-dark-text);
+}
+
+.timerArrowLeft {
+  left: 6%;
+}
+
+.timerArrowRight {
+  right: 6%;
+}
+
+.timerArrow[disabled] {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.timerArrow:not([disabled]):active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.timerArrow::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
 }
 
 /* 44px hit area without a bigger visual. */
