@@ -57,6 +57,8 @@ export const settingsSchema = z.object({
     location: locationSchema.nullable(),
   }),
   calendar: z.object({
+    /** Off = no calendar tile; the weather tile takes its space. */
+    enabled: z.boolean(),
     /** Private iCal link ("Secret address in iCal format"). Treat like a password. */
     icsUrl: z.string().trim().max(1000),
     windowHours: z.number().int().min(1).max(72),
@@ -107,6 +109,7 @@ export const DEFAULT_SETTINGS: Settings = {
     location: null,
   },
   calendar: {
+    enabled: true,
     icsUrl: "",
     windowHours: 24,
     hideDeclined: true,
