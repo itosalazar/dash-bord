@@ -92,7 +92,7 @@ export default function Dashboard() {
     hour: parts.hour,
     timeZone,
     timeFormat: settings.display.timeFormat,
-    events: data.calendar.data?.events ?? null,
+    events: settings.calendar.enabled ? (data.calendar.data?.events ?? null) : null,
     weather: data.weather.data,
   });
 
@@ -177,17 +177,26 @@ export default function Dashboard() {
               ) : null
             }
           />
-          <div className={styles.info}>
-            <WeatherTile slot={data.weather} nowMs={nowMs} onRetry={data.refresh.weather} onOpenSettings={() => openSettings("weather")} />
-            <CalendarTile
-              slot={data.calendar}
+          <div className={styles.info} data-calendar={settings.calendar.enabled ? "on" : "off"}>
+            <WeatherTile
+              slot={data.weather}
               nowMs={nowMs}
-              timeZone={timeZone}
-              timeFormat={settings.display.timeFormat}
-              windowHours={settings.calendar.windowHours}
-              onRetry={data.refresh.calendar}
-              onOpenSettings={() => openSettings("calendar")}
+              southern={(settings.weather.location?.latitude ?? 1) < 0}
+              wide={!settings.calendar.enabled}
+              onRetry={data.refresh.weather}
+              onOpenSettings={() => openSettings("weather")}
             />
+            {settings.calendar.enabled ? (
+              <CalendarTile
+                slot={data.calendar}
+                nowMs={nowMs}
+                timeZone={timeZone}
+                timeFormat={settings.display.timeFormat}
+                windowHours={settings.calendar.windowHours}
+                onRetry={data.refresh.calendar}
+                onOpenSettings={() => openSettings("calendar")}
+              />
+            ) : null}
           </div>
         </div>
         <div className={styles.side}>

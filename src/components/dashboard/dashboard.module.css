@@ -45,6 +45,10 @@
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
 }
 
+.info[data-calendar="off"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Right: a compact cue above a square image. */
 .side {
   grid-template-rows: minmax(0, 31fr) minmax(0, 69fr);
@@ -549,9 +553,11 @@
 }
 
 .weatherIcon {
-  width: min(30cqw, 26cqh);
-  height: min(30cqw, 26cqh);
+  width: min(36cqw, 34cqh);
+  height: min(36cqw, 34cqh);
+  margin: -4% -4% 0 0;
   flex-shrink: 0;
+  color: var(--tile-light-text);
 }
 
 .temp {
@@ -563,6 +569,8 @@
   line-height: 1;
   font-weight: 450;
   letter-spacing: -0.05em;
+  /* A deeper shade of the accent so it stays readable on the light tile. */
+  color: var(--accent-ink);
 }
 
 .tempValue {
@@ -579,6 +587,56 @@
 .weatherFoot {
   display: grid;
   gap: 6px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.summaryRow .summary {
+  flex: 1;
+}
+
+.detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 3vh, 13px);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.moonIcon {
+  width: clamp(18px, 6vh, 26px);
+  height: clamp(18px, 6vh, 26px);
+  flex-shrink: 0;
+  color: var(--tile-light-text);
+}
+
+.detailIcon {
+  width: clamp(18px, 6vh, 26px);
+  height: clamp(18px, 6vh, 26px);
+  color: var(--tile-light-text);
+}
+
+.moonName {
+  color: var(--tile-light-text);
+}
+
+/* Calendar off: the weather tile spans both slots — icon bigger, more detail. */
+.tile[data-wide="true"] .weatherIcon {
+  width: min(24cqw, 52cqh);
+  height: min(24cqw, 52cqh);
+  margin: -2% -1% -20% 0;
+}
+
+.tile[data-wide="true"] .temp {
+  font-size: min(26cqw, 44cqh);
 }
 
 .summary {
