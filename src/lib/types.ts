@@ -78,7 +78,10 @@ export interface CalendarQuery {
 
 export interface InspirationPin {
   id: string;
+  /** May be an animated GIF; see `stillUrl`. */
   imageUrl: string;
+  /** Still version of an animated Pin, shown when the viewer prefers reduced motion. */
+  stillUrl?: string;
   width?: number;
   height?: number;
   alt: string;
