@@ -27,6 +27,8 @@
   --tile-light-line: rgba(0, 0, 0, 0.12);
 
   --accent: #f4582f;
+  /* The accent as text on light tiles (≥ 3.8:1 there). */
+  --accent-ink: #cf3d14;
   --accent-text: #0c0c0c;
   --accent-muted: rgba(12, 12, 12, 0.62);
 
@@ -64,14 +66,17 @@
 /* Accent choices (Settings → Display). Vermilion is the default above. */
 :root[data-accent="signal"] {
   --accent: #f5c21b;
+  --accent-ink: #946c00;
 }
 
 :root[data-accent="cobalt"] {
   --accent: #4f8dff;
+  --accent-ink: #2160d9;
 }
 
 :root[data-accent="mint"] {
   --accent: #3cc48a;
+  --accent-ink: #118155;
 }
 
 /* Tablets (iPad in either orientation): roomier spacing and type. */
