@@ -45,7 +45,12 @@ export function useDashboardData(settings: Settings, timeZone: string) {
     wantsRemote && settings.cues.remoteUrl ? `/api/cues/remote?${new URLSearchParams({ url: settings.cues.remoteUrl })}` : null;
 
   const [weather, refreshWeather] = useResource<WeatherSnapshot>("weather", weatherUrl, REFRESH.weather);
-  const [calendar, refreshCalendar] = useResource<CalendarSnapshot>("calendar", "/api/calendar", REFRESH.calendar, calendarBody);
+  const [calendar, refreshCalendar] = useResource<CalendarSnapshot>(
+    "calendar",
+    settings.calendar.enabled ? "/api/calendar" : null,
+    REFRESH.calendar,
+    calendarBody,
+  );
   const [inspiration, refreshInspiration] = useResource<InspirationBoard>("inspiration", inspirationUrl, REFRESH.inspiration);
   const [remoteCues, refreshRemoteCues] = useResource<Cue[]>("remoteCues", remoteUrl, REFRESH.remoteCues);
 
