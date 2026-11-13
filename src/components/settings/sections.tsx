@@ -283,8 +283,19 @@ export function CalendarSection({ settings, update, status, reloadStatus, data, 
   const set = (patch: Partial<typeof c>) => update((s) => ({ ...s, calendar: { ...s.calendar, ...patch } }));
   const isGoogle = status?.calendarProvider === "google";
 
+  const toggle = (
+    <Switch
+      label="Show the calendar"
+      description={c.enabled ? "turn off if you don't use one — the weather tile takes its space" : "off — the weather tile fills the space"}
+      checked={c.enabled}
+      onChange={(enabled) => set({ enabled })}
+    />
+  );
+  if (!c.enabled) return toggle;
+
   return (
     <>
+      {toggle}
       <ProviderCard name="Calendar" slot={data.calendar} nowMs={nowMs} staleAfterMs={REFRESH.calendar * 3} onRetry={data.refresh.calendar} every="every 5 min" />
       {isGoogle ? (
         <ConnectionCard
@@ -470,12 +481,14 @@ export function InspirationSection({ settings, update, status, reloadStatus, dat
 
 /* ------------------------------------------------------------------- data */
 
-export function DataSection({ status, data, nowMs, sync }: SectionProps & { sync: SettingsSync }) {
+export function DataSection({ settings, status, data, nowMs, sync }: SectionProps & { sync: SettingsSync }) {
   const [cleared, setCleared] = useState(false);
   return (
     <>
       <ProviderCard name="Weather" slot={data.weather} nowMs={nowMs} staleAfterMs={REFRESH.weather * 2} onRetry={data.refresh.weather} every="every 30 min" />
-      <ProviderCard name="Calendar" slot={data.calendar} nowMs={nowMs} staleAfterMs={REFRESH.calendar * 3} onRetry={data.refresh.calendar} every="every 5 min" />
+      {settings.calendar.enabled ? (
+        <ProviderCard name="Calendar" slot={data.calendar} nowMs={nowMs} staleAfterMs={REFRESH.calendar * 3} onRetry={data.refresh.calendar} every="every 5 min" />
+      ) : null}
       <ProviderCard name="Inspiration" slot={data.inspiration} nowMs={nowMs} staleAfterMs={REFRESH.inspiration * 4} onRetry={data.refresh.inspiration} every="every 6 h" />
       {data.remoteCues.fetchedAt || data.remoteCues.error ? (
         <ProviderCard name="Cue feed" slot={data.remoteCues} nowMs={nowMs} staleAfterMs={REFRESH.remoteCues * 4} onRetry={data.refresh.remoteCues} every="every 6 h" />
