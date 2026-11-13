@@ -76,6 +76,48 @@ export function parseBoardFeed(xml: string, fallbackName: string): InspirationBo
   return { boardName, pins };
 }
 
+/* --------------------------------------------------------------- animated */
+
+const MAX_GIF_BYTES = 15 * 1024 * 1024;
+
+/**
+ * The feed only carries still JPEG thumbnails. GIF Pins keep their animated
+ * original next to them at /originals/…/<hash>.gif (photos answer 403), so a
+ * quick HEAD request per Pin tells us which ones can move.
+ */
+async function animatedOriginal(stillUrl: string): Promise<string | null> {
+  let url: URL;
+  try {
+    url = new URL(stillUrl);
+  } catch {
+    return null;
+  }
+  if (url.hostname !== "i.pinimg.com") return null;
+  url.pathname = url.pathname.replace(/^\/\d+x(\d+)?\//, "/originals/").replace(/\.(jpe?g|png|webp)$/i, ".gif");
+  try {
+    const res = await fetch(url, { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(4000) });
+    const type = res.headers.get("content-type") ?? "";
+    const size = Number(res.headers.get("content-length") ?? 0);
+    return res.ok && type.startsWith("image/gif") && size <= MAX_GIF_BYTES ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Upgrades GIF Pins to their animated originals, six requests at a time. */
+async function withAnimation(board: InspirationBoard): Promise<InspirationBoard> {
+  const pins = [...board.pins];
+  for (let i = 0; i < pins.length; i += 6) {
+    await Promise.all(
+      pins.slice(i, i + 6).map(async (pin, offset) => {
+        const gif = await animatedOriginal(pin.imageUrl);
+        if (gif) pins[i + offset] = { ...pin, imageUrl: gif, stillUrl: pin.imageUrl };
+      }),
+    );
+  }
+  return { ...board, pins };
+}
+
 export const pinterestRssProvider: InspirationProvider = {
   id: "rss",
   async getBoard({ boardUrl }) {
@@ -105,7 +147,7 @@ export const pinterestRssProvider: InspirationProvider = {
       const xml = await res.text();
       if (xml.length > MAX_BYTES || !xml.includes("<rss")) throw new Error("unexpected feed body");
 
-      const data = parseBoardFeed(xml, boardNameFromSlug(parsed.slug));
+      const data = await withAnimation(parseBoardFeed(xml, boardNameFromSlug(parsed.slug)));
       cache.set(feedUrl, { at: Date.now(), data });
       return ok("rss", { ...data, boardUrl });
     } catch (error) {
