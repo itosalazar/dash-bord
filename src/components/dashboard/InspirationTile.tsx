@@ -58,16 +58,19 @@ export function InspirationTile({
 
   const image = (
     // Remote Pinterest CDN or local demo art; cached by the service worker.
-    <img
-      key={pin.id}
-      className={styles.pinImage}
-      src={pin.imageUrl}
-      alt={pin.alt}
-      width={pin.width}
-      height={pin.height}
-      decoding="async"
-      referrerPolicy="no-referrer"
-    />
+    // Animated GIF Pins fall back to their still frame for reduced-motion viewers.
+    <picture key={pin.id}>
+      {pin.stillUrl ? <source media="(prefers-reduced-motion: reduce)" srcSet={pin.stillUrl} /> : null}
+      <img
+        className={styles.pinImage}
+        src={pin.imageUrl}
+        alt={pin.alt}
+        width={pin.width}
+        height={pin.height}
+        decoding="async"
+        referrerPolicy="no-referrer"
+      />
+    </picture>
   );
 
   return (
