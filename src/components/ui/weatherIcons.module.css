@@ -1,0 +1,218 @@
+/*
+ * Weather icon set: accent-filled shapes, ink details, tiny faces.
+ * Fill follows the app accent; ink follows the tile's text colour.
+ * Slow, quiet loops for a desk display — all off under Reduce Motion.
+ */
+
+.icon {
+  overflow: visible;
+  --ink: currentColor;
+}
+
+.icon * {
+  transform-box: fill-box;
+}
+
+.fill {
+  fill: var(--accent);
+}
+
+.ink {
+  fill: var(--ink);
+}
+
+.line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.thin {
+  stroke-width: 1.8;
+}
+
+.outline {
+  fill: var(--tile-light);
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+
+/* ------------------------------------------------------------- animation */
+
+.bob {
+  animation: bob 4.5s ease-in-out infinite alternate;
+}
+
+.bobSlow {
+  animation: bob 6s ease-in-out infinite alternate-reverse;
+}
+
+.drift {
+  animation: drift 7s ease-in-out infinite alternate;
+}
+
+.spin {
+  transform-box: view-box;
+  animation: spin 26s linear infinite;
+}
+
+.blink {
+  transform-origin: center;
+  animation: blink 6s ease-in-out infinite;
+}
+
+.fall {
+  animation: fall 1.3s linear infinite;
+}
+
+.flake {
+  animation: flake 3.2s ease-in-out infinite;
+}
+
+.flash {
+  animation: flash 4s steps(1) infinite;
+}
+
+.slide {
+  animation: slide 3.6s ease-in-out infinite alternate;
+}
+
+.twinkle {
+  transform-origin: center;
+  animation: twinkle 2.8s ease-in-out infinite;
+}
+
+.swing {
+  transform-box: view-box;
+  transform-origin: 32px 34px;
+  animation: swing 4s ease-in-out infinite alternate;
+}
+
+@keyframes bob {
+  to {
+    transform: translateY(-1.6px);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-1.5px);
+  }
+  to {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translate(1px, -4px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-1.5px, 7px);
+    opacity: 0;
+  }
+}
+
+@keyframes flake {
+  0% {
+    transform: translate(0, -4px) rotate(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(2px, 7px) rotate(90deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flash {
+  0%,
+  70%,
+  74%,
+  78%,
+  100% {
+    opacity: 1;
+  }
+  72%,
+  76% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-2.5px);
+  }
+  to {
+    transform: translateX(2.5px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes swing {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+
+/* ------------------------------------------------------------ moon phase */
+
+.moon {
+  overflow: visible;
+}
+
+.moonDisc {
+  fill: var(--tile-light);
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.moonLit {
+  fill: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon * {
+    animation: none !important;
+  }
+}
